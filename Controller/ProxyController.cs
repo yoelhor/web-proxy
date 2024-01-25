@@ -108,7 +108,7 @@ namespace web_proxy.Controllers
                     string domain = Request.Host.Value;
                     responseBody = await response.Content.ReadAsStringAsync();
                     response.Content = new StringContent(
-                        responseBody.Replace("wggdemo.ciamlogin.com", "localhost:7099"),
+                        responseBody.Replace("wggdemo.ciamlogin.com", domain),
                         Encoding.UTF8,
                         contentType);
                 }
