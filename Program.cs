@@ -8,7 +8,13 @@ builder.Services.AddRazorPages();
 builder.Services.AddApplicationInsightsTelemetry();
 
 // Addd IHttpClientFactory https://learn.microsoft.com/aspnet/core/fundamentals/http-requests
-builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("ConfiguredHttpClientHandler")
+    .ConfigurePrimaryHttpMessageHandler(() =>
+            new HttpClientHandler
+            {
+                // Disable auto redirection
+                AllowAutoRedirect = false
+            });
 
 var app = builder.Build();
 
@@ -32,5 +38,5 @@ app.MapRazorPages();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller}/{action=Index}/{id?}");
-    
+
 app.Run();

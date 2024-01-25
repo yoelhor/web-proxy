@@ -14,6 +14,7 @@ using System.Text;
 using Microsoft.Extensions.Primitives;
 using System.Text.Unicode;
 using Microsoft.ApplicationInsights.DataContracts;
+using web_proxy.Helpers;
 
 
 namespace web_proxy.Controllers
@@ -34,16 +35,21 @@ namespace web_proxy.Controllers
 
 
         [Route("{**catchall}")]
-        public async Task<ContentResult> CatchAllAsync(string catchAll = "")
+        [HttpGet]
+        [HttpPost]
+        public async Task<IActionResult> CatchAllAsync(string catchAll = "")
         {
             try
             {
-                if (!Request.Path.ToString().Contains("/oauth2/")){
-                    return null;
+                if (!(Request.Path.ToString().Contains("/818fbfd7-0338-45d3-8cc8-8d521cc578b2/") || Request.Path.ToString().Contains("/common/")))
+                {
+                    return Ok();
                 }
 
                 string targetURL = $"https://wggdemo.ciamlogin.com{this.Request.Path}{this.Request.QueryString}";
-                HttpClient client = _HttpClientFactory.CreateClient();
+
+                // Create HTTP client 
+                HttpClient client = _HttpClientFactory.CreateClient("ConfiguredHttpClientHandler");
 
                 // Copy the request headers
                 foreach (var header in Request.Headers)
@@ -54,22 +60,57 @@ namespace web_proxy.Controllers
                     }
                 }
 
-                // Send the HTTP GET request
-                HttpResponseMessage response = await client.GetAsync(targetURL);
+                HttpResponseMessage response = null;
+                string contentType = "text/html";
+
+                // Copy the request HTTP body (if any)
+                if (HttpMethods.IsPost(Request.Method))
+                {
+                    HttpContent content = null;
+
+                    if (Request.ContentType.Contains("application/json"))
+                    {
+                        // Set the content type to JSON
+                        contentType = "application/json";
+
+                        // Read the request body 
+                        string body = await new System.IO.StreamReader(this.Request.Body).ReadToEndAsync();
+
+                        // Add the JOSN payload
+                        content = new StringContent(body, Encoding.UTF8, contentType);
+                    }
+                    else
+                    {
+                        // IMPORTANT: this code supports only application/x-www-form-urlencoded
+                        var dict = new Dictionary<string, string>();
+                        foreach (var item in Request.Form)
+                        {
+                            dict.Add(item.Key, item.Value);
+                        }
+
+                        content = new FormUrlEncodedContent(dict);
+                    }
+
+
+                    // Send an HTTP POST request
+                    response = await client.PostAsync(targetURL, content);
+                }
+                else
+                {
+                    // Send an HTTP GET request
+                    response = await client.GetAsync(targetURL);
+                }
 
                 // Read the response body
                 string responseBody = string.Empty;
                 if (response.IsSuccessStatusCode)
                 {
+                    string domain = Request.Host.Value;
                     responseBody = await response.Content.ReadAsStringAsync();
-                }
-
-                this.Response.Headers.Clear();
-
-                // Copy the response headers
-                foreach (var header in response.Headers)
-                {
-                    Response.Headers.Add(header.Key, header.Value.ToArray());
+                    response.Content = new StringContent(
+                        responseBody.Replace("wggdemo.ciamlogin.com", "localhost:7099"),
+                        Encoding.UTF8,
+                        contentType);
                 }
 
                 // Add application insights page telemetry
@@ -83,18 +124,18 @@ namespace web_proxy.Controllers
 
                 this._telemetry.TrackPageView(pageView);
 
-                //Response the content
-                return new ContentResult
-                {
-                    Content = responseBody,
-                    ContentType = "text/html"
-                };
+                // Here we ask the framework to dispose the response object a the end of the user request
+                this.HttpContext.Response.RegisterForDispose(response);
+
+                // Return the respons that return from the call to the web server
+                return new HttpResponseMessageResult(response);
+
             }
             catch (System.Exception ex)
             {
                 //Commons.LogError(Request, _telemetry, settings, tenantId, EVENT + "Error", ex.Message, response);
                 //return BadRequest(new { error = ex.Message });
-                return null;
+                return Ok(ex.Message);
             }
         }
     }
