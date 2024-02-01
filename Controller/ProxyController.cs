@@ -105,8 +105,16 @@ namespace web_proxy.Controllers
                 string responseBody = string.Empty;
                 if (response.IsSuccessStatusCode)
                 {
-                    string domain = Request.Host.Value;
                     responseBody = await response.Content.ReadAsStringAsync();
+
+                    string domain = Request.Host.Value;
+                    
+                    // Check for the original host header X-Forwarded-Host (if exists)
+                    if (Request.Headers.ContainsKey("X-Forwarded-Host") && Request.Headers["X-Forwarded-Host"].Count > 0)
+                    {
+                        domain = Request.Headers["X-Forwarded-Host"][0]!;
+                    }
+
                     response.Content = new StringContent(
                         responseBody.Replace("wggdemo.ciamlogin.com", domain),
                         Encoding.UTF8,
@@ -125,7 +133,7 @@ namespace web_proxy.Controllers
                 {
                     pageView.Properties.Add("TestID", Request.Query["test"][0]);
                 }
-                
+
                 //pageView.Properties.Add("Response_Body", responseBody);
 
                 this._telemetry.TrackPageView(pageView);
