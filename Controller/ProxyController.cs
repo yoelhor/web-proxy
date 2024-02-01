@@ -121,9 +121,9 @@ namespace web_proxy.Controllers
                 pageView.Properties.Add("Request_Headers", JsonSerializer.Serialize(Request.Headers));
                 pageView.Properties.Add("Response_Headers", JsonSerializer.Serialize(response.Headers));
 
-                if (Request.Query.ContainsKey("test"))
+                if (Request.Query.ContainsKey("test") && Request.Query["test"].Count > 0)
                 {
-                    pageView.Properties.Add("TestID", JsonSerializer.Serialize(Request.Query["test"]));
+                    pageView.Properties.Add("TestID", Request.Query["test"][0]);
                 }
                 
                 //pageView.Properties.Add("Response_Body", responseBody);
