@@ -120,6 +120,12 @@ namespace web_proxy.Controllers
                 pageView.Properties.Add("Request_Method", Request.Method);
                 pageView.Properties.Add("Request_Headers", JsonSerializer.Serialize(Request.Headers));
                 pageView.Properties.Add("Response_Headers", JsonSerializer.Serialize(response.Headers));
+
+                if (Request.Query.ContainsKey("test"))
+                {
+                    pageView.Properties.Add("TestID", JsonSerializer.Serialize(Request.Query["test"]));
+                }
+                
                 //pageView.Properties.Add("Response_Body", responseBody);
 
                 this._telemetry.TrackPageView(pageView);
