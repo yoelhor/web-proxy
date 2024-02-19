@@ -60,8 +60,8 @@ namespace web_proxy.Controllers
                     }
                 }
 
-                // Add the 
-                client.DefaultRequestHeaders.TryAddWithoutValidation("X-Forwarded-For", "signin.woodgrovedemo.com");
+                // Add the X-Forwarded-For
+                client.DefaultRequestHeaders.TryAddWithoutValidation("X-Forwarded-For", Request.Host.Value);
 
                 HttpResponseMessage response = null;
                 string contentType = "text/html";
@@ -118,8 +118,7 @@ namespace web_proxy.Controllers
                         domain = Request.Headers["X-Forwarded-Host"][0]!;
                     }
 
-                    response.Content = new StringContent(
-                        responseBody.Replace("wggdemo.ciamlogin.com", domain),
+                    response.Content = new StringContent(responseBody,
                         Encoding.UTF8,
                         contentType);
                 }
