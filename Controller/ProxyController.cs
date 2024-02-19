@@ -60,6 +60,9 @@ namespace web_proxy.Controllers
                     }
                 }
 
+                // Add the 
+                client.DefaultRequestHeaders.TryAddWithoutValidation("X-Forwarded-For", "signin.woodgrovedemo.com");
+
                 HttpResponseMessage response = null;
                 string contentType = "text/html";
 
