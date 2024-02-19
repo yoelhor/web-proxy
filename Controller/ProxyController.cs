@@ -118,7 +118,8 @@ namespace web_proxy.Controllers
                         domain = Request.Headers["X-Forwarded-Host"][0]!;
                     }
 
-                    response.Content = new StringContent(responseBody,
+                    response.Content = new StringContent(
+                        responseBody.Replace("wggdemo.ciamlogin.com", domain),
                         Encoding.UTF8,
                         contentType);
                 }
